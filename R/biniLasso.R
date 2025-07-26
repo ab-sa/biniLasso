@@ -40,11 +40,14 @@ num_to_cat <-
            n_bins = NULL,
            cuts_list = NULL) {
 
+    len_flag <- FALSE
+
     data_bins <- data[ , cols]
     for (nf in 1 : length(cols)) {
       if (method == "quantile") {
-        x_cuts_tmp <- stats::quantile(data[ , cols[nf]],
-                               probs = c(1 : (n_bins - 1)) / n_bins)
+        x_cuts_tmp <- unique(stats::quantile(data[ , cols[nf]],
+                                             probs = c(1 : (n_bins - 1)) / n_bins))
+        if (length(x_cuts_tmp) < n_bins) len_flag <- TRUE
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
         cut_names_tmp <- paste0("_", c(1 : n_bins))
       }
@@ -67,6 +70,8 @@ num_to_cat <-
                       data = data_bins)
     colnames(data_bins)[grepl("bin$", colnames(data_bins))] <-
       stringr::str_replace_all(colnames(data_bins)[grepl("bin$", colnames(data_bins))], "bin", "cat")
+
+    if (len_flag) warning("Not enough unique values in listed numeric columns to convert all of them to exactly n_bins dummy variables. The dummy variables were adjusted according to the available unique values in each numeric column.")
 
     return(list(data_cat = data_bins,
                 x = x,
