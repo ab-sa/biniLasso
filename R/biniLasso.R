@@ -49,7 +49,7 @@ num_to_cat <-
                                              probs = c(1 : (n_bins - 1)) / n_bins))
         if (length(x_cuts_tmp) < n_bins) {
           len_flag <- TRUE
-          n_bins_tmp <- length(x_cuts_tmp)
+          n_bins_tmp <- length(x_cuts_tmp) + 1
         }
         else n_bins_tmp <- n_bins
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
