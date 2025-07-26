@@ -47,9 +47,13 @@ num_to_cat <-
       if (method == "quantile") {
         x_cuts_tmp <- unique(stats::quantile(data[ , cols[nf]],
                                              probs = c(1 : (n_bins - 1)) / n_bins))
-        if (length(x_cuts_tmp) < n_bins) len_flag <- TRUE
+        if (length(x_cuts_tmp) < n_bins) {
+          len_flag <- TRUE
+          n_bins_tmp <- length(x_cuts_tmp)
+        }
+        else n_bins_tmp <- n_bins
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-        cut_names_tmp <- paste0("_", c(1 : n_bins))
+        cut_names_tmp <- paste0("_", c(1 : n_bins_tmp))
       }
       if (method == "fixed") {
         x_cuts_tmp <- cuts_list[nf][[1]]
