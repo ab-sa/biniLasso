@@ -166,35 +166,47 @@ opt_cuts_finder <-
            cols,
            x_cuts) {
 
+    if (method == "both") method <- c("biniLasso", "Sparse biniLasso")
     if (is.null(penalty.factor)) penalty.factor <- rep(1, ncol(x))
 
-    if (method == "biniLasso") {
-      glm_cv <- glmnet::cv.glmnet(x = x, y = y,
+    if ("biniLasso" %in% method) {
+      bini_cv <- glmnet::cv.glmnet(x = x, y = y,
                           family = family, nfolds = lasso_nfolds,
                           penalty.factor = penalty.factor)
-      glm_fit <- glmnet::glmnet(x = x, y = y,
+      bini_fit <- glmnet::glmnet(x = x, y = y,
                         family = family,
                         lambda = ifelse(lasso_rule == "min",
-                                        glm_cv$lambda.min,
-                                        glm_cv$lambda.1se),
+                                        bini_cv$lambda.min,
+                                        bini_cv$lambda.1se),
                         penalty.factor = penalty.factor)
+      x_cuts_bini_opt <- cuts_extractor(glm_fit = bini_fit,
+                                        cols = cols,
+                                        x_cuts = x_cuts)
+      x_cuts_bini_opt <- tibble(method = "biniLasso",
+                                predictors = cols,
+                                opt_cuts = x_cuts_bini_opt[[1]])
     }
-    if (method == "Sparse biniLasso") {
-      glm_cv <- uniLasso::cv.uniLasso(x = x, y = y,
+    if ("Sparse biniLasso" %in% method) {
+      ubini_cv <- uniLasso::cv.uniLasso(x = x, y = y,
                             family = family, nfolds = lasso_nfolds,
                             penalty.factor = penalty.factor)
-      glm_fit <- uniLasso::uniLasso(x = x, y = y,
+      ubini_fit <- uniLasso::uniLasso(x = x, y = y,
                           family = family,
                           lambda = ifelse(lasso_rule == "min",
-                                          glm_cv$lambda.min,
-                                          glm_cv$lambda.1se),
+                                          ubini_cv$lambda.min,
+                                          ubini_cv$lambda.1se),
                           penalty.factor = penalty.factor)
+      x_cuts_ubini_opt <- cuts_extractor(ubini_fit = glm_fit,
+                                         cols = cols,
+                                         x_cuts = x_cuts)
+      x_cuts_ubini_opt <- tibble(method = "Sparse biniLasso",
+                                 predictors = cols,
+                                 opt_cuts = x_cuts_ubini_opt[[1]])
     }
 
-
-    x_cuts_opt <- cuts_extractor(glm_fit = glm_fit,
-                                 cols = cols,
-                                 x_cuts = x_cuts)
+    if (method == "biniLasso") return(x_cuts_bini_opt)
+    if (method == "Sparse biniLasso") return(x_cuts_ubini_opt)
+    if (method == c("biniLasso", "Sparse biniLasso")) return(x_cuts_bini_opt %>% bind_rows(x_cuts_ubini_opt))
 
   return(x_cuts_opt)
 }
