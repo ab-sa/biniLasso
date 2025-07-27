@@ -197,7 +197,7 @@ opt_cuts_finder <-
                                           ubini_cv$lambda.min,
                                           ubini_cv$lambda.1se),
                           penalty.factor = penalty.factor)
-      x_cuts_ubini_opt <- cuts_extractor(ubini_fit = glm_fit,
+      x_cuts_ubini_opt <- cuts_extractor(glm_fit = ubini_fit,
                                          cols = cols,
                                          x_cuts = x_cuts)
       x_cuts_ubini_opt <- x_cuts_ubini_opt[[1]]
