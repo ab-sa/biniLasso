@@ -185,7 +185,7 @@ opt_cuts_finder <-
       x_cuts_bini_opt <- x_cuts_bini_opt[[1]]
       names(x_cuts_bini_opt) <- cols
       x_cuts_bini_opt <- tibble(method = "biniLasso",
-                                opt_cuts = x_cuts_bini_opt)
+                                opt_cuts = list(x_cuts_bini_opt))
     }
     if ("Sparse biniLasso" %in% method) {
       ubini_cv <- uniLasso::cv.uniLasso(x = x, y = y,
@@ -203,7 +203,7 @@ opt_cuts_finder <-
       x_cuts_ubini_opt <- x_cuts_ubini_opt[[1]]
       names(x_cuts_ubini_opt) <- cols
       x_cuts_ubini_opt <- tibble(method = "Sparse biniLasso",
-                                 opt_cuts = x_cuts_ubini_opt)
+                                 opt_cuts = list(x_cuts_ubini_opt))
     }
 
     if (method == "biniLasso") return(x_cuts_bini_opt)
