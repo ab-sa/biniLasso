@@ -208,7 +208,7 @@ opt_cuts_finder <-
 
     if (all(method == "biniLasso")) return(x_cuts_bini_opt)
     if (all(method == "Sparse biniLasso")) return(x_cuts_ubini_opt)
-    if (method == c("biniLasso", "Sparse biniLasso")) return(x_cuts_bini_opt %>% bind_rows(x_cuts_ubini_opt))
+    if (all(method == c("biniLasso", "Sparse biniLasso"))) return(x_cuts_bini_opt %>% bind_rows(x_cuts_ubini_opt))
 
   return(x_cuts_opt)
 }
