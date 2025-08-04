@@ -58,7 +58,7 @@ num_to_cat <-
       if (method == "fixed") {
         x_cuts_tmp <- cuts_list[nf][[1]]
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-        cut_names_tmp <- paste0("_", c(1 : (length(cuts_list[nf][[1]]) + 1)))
+        cut_names_tmp <- paste0("_", c(1 : (length(cuts_list[nf][[1]]))))
       }
       data_bins[ , paste0(cols[nf], "_bin")] <-
         cut(data[ , cols[nf]],
@@ -208,7 +208,8 @@ opt_cuts_finder <-
 
     if (all(method == "biniLasso")) return(x_cuts_bini_opt)
     if (all(method == "Sparse biniLasso")) return(x_cuts_ubini_opt)
-    if (all(method == c("biniLasso", "Sparse biniLasso"))) return(x_cuts_bini_opt %>% bind_rows(x_cuts_ubini_opt))
+    if (all(method == c("biniLasso", "Sparse biniLasso"))) return(x_cuts_bini_opt %>%
+                                                                    bind_rows(x_cuts_ubini_opt))
 
   return(x_cuts_opt)
 }
