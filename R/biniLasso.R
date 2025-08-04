@@ -58,7 +58,7 @@ num_to_cat <-
       if (method == "fixed") {
         x_cuts_tmp <- cuts_list[nf][[1]]
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-        cut_names_tmp <- paste0("_", c(1 : (length(cuts_list[nf][[1]]))))
+        cut_names_tmp <- paste0("_", c(1 : (length(cuts_list[nf][[1]]) + 1)))
       }
       data_bins[ , paste0(cols[nf], "_bin")] <-
         cut(data[ , cols[nf]],
@@ -70,8 +70,8 @@ num_to_cat <-
       if (nf > 2) x_cuts <- list(c(x_cuts[[1]], list(x_cuts_tmp)))
     }
 
-    x <- stats::model.matrix(stats::as.formula(paste0(" ~ 0 + ", paste(paste0(cols, "_bin"), collapse = " + "))),
-                      data = data_bins)
+    x <- stats::model.matrix(stats::as.formula(paste0(" ~ ", paste(paste0(cols, "_bin"), collapse = " + "))),
+                      data = data_bins)[ , -1]
     colnames(data_bins)[grepl("bin$", colnames(data_bins))] <-
       stringr::str_replace_all(colnames(data_bins)[grepl("bin$", colnames(data_bins))], "bin", "cat")
 
