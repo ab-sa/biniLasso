@@ -16,7 +16,8 @@ Imports:
     survival,
     glmnet,
     stringr,
-    uniLasso
+    uniLasso,
+    dplyr
 Remotes:
     trevorhastie/uniLasso
 RoxygenNote: 7.3.2

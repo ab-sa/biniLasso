@@ -184,7 +184,7 @@ opt_cuts_finder <-
                                         x_cuts = x_cuts)
       x_cuts_bini_opt <- x_cuts_bini_opt[[1]]
       names(x_cuts_bini_opt) <- cols
-      x_cuts_bini_opt <- tibble(method = "biniLasso",
+      x_cuts_bini_opt <- dplyr::tibble(method = "biniLasso",
                                 opt_cuts = list(x_cuts_bini_opt))
     }
     if ("Sparse biniLasso" %in% method) {
@@ -202,14 +202,14 @@ opt_cuts_finder <-
                                          x_cuts = x_cuts)
       x_cuts_ubini_opt <- x_cuts_ubini_opt[[1]]
       names(x_cuts_ubini_opt) <- cols
-      x_cuts_ubini_opt <- tibble(method = "Sparse biniLasso",
+      x_cuts_ubini_opt <- dplyr::tibble(method = "Sparse biniLasso",
                                  opt_cuts = list(x_cuts_ubini_opt))
     }
 
     if (all(method == "biniLasso")) return(x_cuts_bini_opt)
     if (all(method == "Sparse biniLasso")) return(x_cuts_ubini_opt)
     if (all(method == c("biniLasso", "Sparse biniLasso"))) return(x_cuts_bini_opt %>%
-                                                                    bind_rows(x_cuts_ubini_opt))
+                                                                    dplyr::bind_rows(x_cuts_ubini_opt))
 
   return(x_cuts_opt)
 }
