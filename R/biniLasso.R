@@ -38,9 +38,12 @@ num_to_cat <-
            cols,
            method = "quantile",
            n_bins = NULL,
-           cuts_list = NULL) {
+           cuts_list = NULL,
+           penalty.factor = FALSE) {
 
     len_flag <- FALSE
+
+    if (penalty.factor) penFac <- numeric(0)
 
     data_bins <- data[ , cols]
     for (nf in 1 : length(cols)) {
@@ -65,6 +68,11 @@ num_to_cat <-
             breaks = x_bounds_tmp,
             labels = cut_names_tmp)
 
+      if (penalty.factor) {
+        if (length(cut_names_tmp) > 2) penFac <- c(penFac, c(0, rep(1, length(cut_names_tmp) - 2), 0))
+        else penFac <- c(penFac, rep(0, length(cut_names_tmp)))
+      }
+
       if (nf == 1) x_cuts <- list(x_cuts_tmp)
       if (nf == 2) x_cuts <- list(c(x_cuts, list(x_cuts_tmp)))
       if (nf > 2) x_cuts <- list(c(x_cuts[[1]], list(x_cuts_tmp)))
@@ -77,9 +85,18 @@ num_to_cat <-
 
     if (len_flag) warning("Not enough unique values in listed numeric columns to convert all of them to exactly n_bins dummy variables. The dummy variables were adjusted according to the available unique values in each numeric column.")
 
-    return(list(data_cat = data_bins,
-                x = x,
-                x_cuts = x_cuts))
+    if (penalty.factor) {
+      return(list(data_cat = data_bins,
+                  x = x,
+                  x_cuts = x_cuts,
+                  penalty.factor = penFac))
+    }
+    else {
+      return(list(data_cat = data_bins,
+                  x = x,
+                  x_cuts = x_cuts))
+    }
+
   }
 
 
