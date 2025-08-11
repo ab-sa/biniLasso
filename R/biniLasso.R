@@ -71,7 +71,7 @@ cumBinarizer <-
         }
         else n_bins_tmp <- n_bins
         x_cuts_tmp <- unique(stats::quantile(x_tmp,
-                                             probs = c(1 : (n_bins_tmp - 1)) / n_bins_tmp))
+                                             probs = c(1 : (n_bins_tmp)) / (n_bins_tmp + 1)))
         cut_names_tmp <- paste0("_bin", c(1 : n_bins_tmp))
       }
       if (method == "fixed") {
