@@ -88,7 +88,7 @@ num_to_cat <-
 
     x <- stats::model.matrix(stats::as.formula(paste0(" ~ ", paste(paste0(cols, "_bin"), collapse = " + "))),
                       data = data_bins)[ , -1]
-    # x <- x[ , -which(grepl("_max$", colnames(x)))]
+    x <- x[ , -which(grepl("max$", colnames(x)))]
     colnames(data_bins)[grepl("bin$", colnames(data_bins))] <-
       stringr::str_replace_all(colnames(data_bins)[grepl("bin$", colnames(data_bins))], "bin", "cat")
 
