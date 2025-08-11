@@ -72,18 +72,16 @@ cumBinarizer <-
         else n_bins_tmp <- n_bins
         x_cuts_tmp <- unique(stats::quantile(x_tmp,
                                              probs = c(1 : (n_bins_tmp - 1)) / n_bins_tmp))
-        x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
         cut_names_tmp <- paste0("_bin", c(1 : n_bins_tmp))
       }
       if (method == "fixed") {
         x_cuts_tmp <- cuts_list[nf][[1]]
-        x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-        cut_names_tmp <- paste0("_bin", c(1 : (length(cuts_list[nf][[1]]) + 1)))
+        cut_names_tmp <- paste0("_bin", c(1 : (length(cuts_list[nf][[1]]))))
       }
 
       x <- cbind(x,
                  c_binarization(x = data[ , cols[nf]],
-                                breaks = x_bounds_tmp,
+                                breaks = x_cuts_tmp,
                                 labels = paste0(cols[nf], cut_names_tmp)))
 
       if (nf == 1) x_cuts <- list(x_cuts_tmp)
