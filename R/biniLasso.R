@@ -131,7 +131,7 @@ cuts_extractor <-
     for (nf in 1 : length(cols)) {
       X_cuts_ind_tmp <- as.numeric(unlist(lapply(beta_nonZero[grepl(cols[nf], beta_nonZero)],
                                                  function(x) {
-                                                   locs <- stringr::str_locate_all(x, "bin_")[[1]]
+                                                   locs <- stringr::str_locate_all(x, "_bin")[[1]]
                                                    locs <- locs[nrow(locs) , "end"]
                                                    substr(x, start = locs + 1, stop = nchar(x))
                                                  })))
