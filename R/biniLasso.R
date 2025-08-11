@@ -6,12 +6,13 @@ c_binarization <-
     x_length <- length(x)
     n_breaks <- length(breaks)
     matrix_binarization <- base::matrix(0, nrow = x_length,
-                                        ncol = n_breaks)
+                                        ncol = n_breaks,
+                                        dimnames = list(character(),
+                                                        labels))
     for (i in 1:n_breaks) {
       matrix_binarization[, i][which(x >= breaks[i])] <- 1
     }
-    return(as.data.frame(matrix_binarization,
-                         col.names = labels))
+    return(matrix_binarization)
   }
 
 
@@ -79,10 +80,6 @@ cumBinarizer <-
         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
         cut_names_tmp <- paste0("_bin", c(1 : (length(cuts_list[nf][[1]]) + 1)))
       }
-      data_bins[ , paste0(cols[nf], "_bin")] <-
-        cut(data[ , cols[nf]],
-            breaks = x_bounds_tmp,
-            labels = cut_names_tmp)
 
       x <- cbind(x,
                  c_binarization(x = data[ , cols[nf]],
