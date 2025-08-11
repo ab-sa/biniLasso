@@ -73,7 +73,9 @@ num_to_cat <-
         ifelse(data_bins[ , cols[nf]] == min(data_bins[ , cols[nf]]), "min",
                ifelse(data_bins[ , cols[nf]] == max(data_bins[ , cols[nf]]), "max",
                       data_bins[ , paste0(cols[nf], "_bin")]))
-
+      data_bins[ , paste0(cols[nf], "_bin")] <- factor(data_bins[ , paste0(cols[nf], "_bin")])
+      data_bins[ , paste0(cols[nf], "_bin")] <- relevel(data_bins[ , paste0(cols[nf], "_bin")],
+                                                        ref = "min")
       # if (penalty.factor) {
       #   if (length(cut_names_tmp) > 2) penFac <- c(penFac, c(0, rep(1, length(cut_names_tmp) - 2), 0))
       #   else penFac <- c(penFac, rep(0, length(cut_names_tmp)))
@@ -86,6 +88,7 @@ num_to_cat <-
 
     x <- stats::model.matrix(stats::as.formula(paste0(" ~ ", paste(paste0(cols, "_bin"), collapse = " + "))),
                       data = data_bins)[ , -1]
+    # x <- x[ , -which(grepl("_max$", colnames(x)))]
     colnames(data_bins)[grepl("bin$", colnames(data_bins))] <-
       stringr::str_replace_all(colnames(data_bins)[grepl("bin$", colnames(data_bins))], "bin", "cat")
 
