@@ -297,7 +297,10 @@ opt_cuts_finder <-
                           penalty.factor = penalty.factor)
       x_cuts_ubini_opt <- cuts_extractor(glm_fit = ubini_fit,
                                          cols = cols,
-                                         x_cuts = x_cuts)
+                                         x_cuts = x_cuts,
+                                         lambda_opt = ifelse(lasso_rule == "min",
+                                                             ubini_cv$lambda.min,
+                                                             ubini_cv$lambda.1se))
       x_cuts_ubini_opt <- x_cuts_ubini_opt[[1]]
       names(x_cuts_ubini_opt) <- cols
       x_cuts_ubini_opt <- dplyr::tibble(method = "Sparse biniLasso",
