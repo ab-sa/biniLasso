@@ -91,7 +91,7 @@ cumBinarizer <-
 
     if (len_flag) warning("Not enough unique values in listed numeric columns to convert all of them to exactly n_bins dummy variables. The dummy variables were adjusted according to the available unique values in each numeric column.")
 
-    return(list(x = x,
+    return(list(x = x[ , -1],
                 x_cuts = x_cuts))
   }
 
