@@ -188,9 +188,14 @@ cumBinarizer <-
 cuts_extractor <-
   function(glm_fit,
            cols,
-           x_cuts) {
+           x_cuts,
+           lambda_opt = NULL) {
 
-    beta_nonZero <- names(glm_fit$beta[ , 1][glm_fit$beta[, 1] != 0])
+    if (is.null(lambda_opt)) beta_nonZero <- names(glm_fit$beta[ , 1][glm_fit$beta[, 1] != 0])
+    else {
+      lambda_inx <- which(glm_fit$lambda == lambda_opt)
+      beta_nonZero <- names(glm_fit$beta[ , lambda_inx][glm_fit$beta[, lambda_inx] != 0])
+    }
     for (nf in 1 : length(cols)) {
       X_cuts_ind_tmp <- as.numeric(unlist(lapply(beta_nonZero[grepl(cols[nf], beta_nonZero)],
                                                  function(x) {
@@ -286,9 +291,9 @@ opt_cuts_finder <-
                             penalty.factor = penalty.factor)
       ubini_fit <- uniLasso::uniLasso(x = x, y = y,
                           family = family,
-                          lambda = ifelse(lasso_rule == "min",
-                                          ubini_cv$lambda.min,
-                                          ubini_cv$lambda.1se),
+                          # lambda = ifelse(lasso_rule == "min",
+                          #                 ubini_cv$lambda.min,
+                          #                 ubini_cv$lambda.1se),
                           penalty.factor = penalty.factor)
       x_cuts_ubini_opt <- cuts_extractor(glm_fit = ubini_fit,
                                          cols = cols,
