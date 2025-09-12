@@ -295,7 +295,8 @@ biniFit <- function(data,
   }
 
   return(list(data = data_converted$data_cat,
-              fit = bini_fit))
+              fit = bini_fit,
+              dataFit = dataFit))
 }
 
 
