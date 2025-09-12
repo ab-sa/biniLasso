@@ -50,7 +50,7 @@ simData <- data.frame(t = rexp(1000),
                       x3 = rnorm(1000))
 
 simData_converted_1 <-
-  num_to_cat(data = simData,
+  cumBinarizer(data = simData,
              cols = c("x1", "x2", "x3"),
              method = "quantile",
              n_bins = 30)

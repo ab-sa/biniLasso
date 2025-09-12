@@ -1,4 +1,12 @@
 
+#' Create cumulative binarized features
+#'
+#' @param x input numeric covariate for cumulative binarization
+#' @param breaks breaking values to be used for binarization
+#' @param labels labels to be used for the created cumulative binarized columns
+#'
+#' @returns a matrix containing cumulative binarized features corresponds to x
+#'
 c_binarization <-
   function (x,
             breaks,
@@ -24,9 +32,9 @@ c_binarization <-
 #' @param n_bins an integer value specifying number of bins to convert the numeric columns. Only needed for quantile method.
 #' @param cuts_list a list of cut-points corresponding to each numeric column in the same order as entries of cols input.
 #'
-#' @returns data_cat: a data frame including original numeric columns as well as the converted categorical columns.
-#' @returns x: a matrix including dummy variables corresponding to converted categorical variables.
-#' @returns x_cuts: a list of cut-points corresponding to each entry of cols and in the same order.
+#' @returns data_cat a data frame including original numeric columns as well as the converted categorical columns.
+#' @returns x a matrix including dummy variables corresponding to converted categorical variables.
+#' @returns x_cuts a list of cut-points corresponding to each entry of cols and in the same order.
 #' @export
 #'
 #' @examples
@@ -96,85 +104,6 @@ cumBinarizer <-
   }
 
 
-# cumBinarizer <-
-#   function(data,
-#            cols,
-#            method = "quantile",
-#            n_bins = NULL,
-#            cuts_list = NULL) {
-#            # penalty.factor = FALSE) {
-#
-#     len_flag <- FALSE
-#
-#     # if (penalty.factor) penFac <- numeric(0)
-#
-#     data_bins <- data[ , cols]
-#     for (nf in 1 : length(cols)) {
-#       if (method == "quantile") {
-#         x_tmp <- sort(unique(data[ , cols[nf]]))
-#         x_tmp <- x_tmp[- c(1, length(x_tmp))]
-#         if (length(x_tmp) < n_bins) {
-#           len_flag <- TRUE
-#           n_bins_tmp <- length(x_tmp)
-#         }
-#         else n_bins_tmp <- n_bins
-#         x_cuts_tmp <- unique(stats::quantile(x_tmp,
-#                                              probs = c(1 : (n_bins_tmp - 1)) / n_bins_tmp))
-#         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-#         cut_names_tmp <- paste0("_", c(1 : n_bins_tmp))
-#       }
-#       if (method == "fixed") {
-#         x_cuts_tmp <- cuts_list[nf][[1]]
-#         x_bounds_tmp <- c(-Inf, x_cuts_tmp, Inf)
-#         cut_names_tmp <- paste0("_", c(1 : (length(cuts_list[nf][[1]]) + 1)))
-#       }
-#       data_bins[ , paste0(cols[nf], "_bin")] <-
-#         cut(data[ , cols[nf]],
-#             breaks = x_bounds_tmp,
-#             labels = cut_names_tmp)
-#       data_bins[ , paste0(cols[nf], "_bin")] <-
-#         ifelse(data_bins[ , cols[nf]] == min(data_bins[ , cols[nf]]), "min",
-#                ifelse(data_bins[ , cols[nf]] == max(data_bins[ , cols[nf]]), "max",
-#                       data_bins[ , paste0(cols[nf], "_bin")]))
-#       data_bins[ , paste0(cols[nf], "_bin")] <- factor(data_bins[ , paste0(cols[nf], "_bin")])
-#       data_bins[ , paste0(cols[nf], "_bin")] <- relevel(data_bins[ , paste0(cols[nf], "_bin")],
-#                                                         ref = "min")
-#       # if (penalty.factor) {
-#       #   if (length(cut_names_tmp) > 2) penFac <- c(penFac, c(0, rep(1, length(cut_names_tmp) - 2), 0))
-#       #   else penFac <- c(penFac, rep(0, length(cut_names_tmp)))
-#       # }
-#
-#       if (nf == 1) x_cuts <- list(x_cuts_tmp)
-#       if (nf == 2) x_cuts <- list(c(x_cuts, list(x_cuts_tmp)))
-#       if (nf > 2) x_cuts <- list(c(x_cuts[[1]], list(x_cuts_tmp)))
-#     }
-#
-#     x <- stats::model.matrix(stats::as.formula(paste0(" ~ ", paste(paste0(cols, "_bin"), collapse = " + "))),
-#                       data = data_bins)[ , -1]
-#     x <- x[ , -which(grepl("max$", colnames(x)))]
-#     colnames(data_bins)[grepl("bin$", colnames(data_bins))] <-
-#       stringr::str_replace_all(colnames(data_bins)[grepl("bin$", colnames(data_bins))], "bin", "cat")
-#
-#     if (len_flag) warning("Not enough unique values in listed numeric columns to convert all of them to exactly n_bins dummy variables. The dummy variables were adjusted according to the available unique values in each numeric column.")
-#
-#     return(list(data_cat = data_bins,
-#                 x = x,
-#                 x_cuts = x_cuts))
-#
-#     # if (penalty.factor) {
-#     #   return(list(data_cat = data_bins,
-#     #               x = x,
-#     #               x_cuts = x_cuts,
-#     #               penalty.factor = penFac))
-#     # }
-#     # else {
-#     #   return(list(data_cat = data_bins,
-#     #               x = x,
-#     #               x_cuts = x_cuts))
-#     # }
-#
-#   }
-
 
 
 #' Extract optimal cut-points from the fitted glmnet model.
@@ -182,6 +111,7 @@ cumBinarizer <-
 #' @param glm_fit the fitted glmnet object
 #' @param cols a vector of numeric column names (characters)
 #' @param x_cuts a list of cut-points corresponding to each entry of cols and in the same order.
+#' @param lambda_opt the value to be used as Lasso optimal lambda value for coefficients extracted. This can be left unspecified (NULL) if lambda value already has been specified in the glm_fit (regular LAsso fit), or alternatively, the glm_fit can contain model fit for a range of lambda values (mainly for uniLasso fit), but for coefficient extraction, the fit corresponding to this lambda value will be used.
 #'
 #' @returns a list of optimal cut-points corresponding to the columns in cols and in the same order.
 #'
@@ -291,9 +221,6 @@ opt_cuts_finder <-
                             penalty.factor = penalty.factor)
       ubini_fit <- uniLasso::uniLasso(x = x, y = y,
                           family = family,
-                          # lambda = ifelse(lasso_rule == "min",
-                          #                 ubini_cv$lambda.min,
-                          #                 ubini_cv$lambda.1se),
                           penalty.factor = penalty.factor)
       x_cuts_ubini_opt <- cuts_extractor(glm_fit = ubini_fit,
                                          cols = cols,
@@ -313,6 +240,62 @@ opt_cuts_finder <-
                                                                     dplyr::bind_rows(x_cuts_ubini_opt))
 
   return(x_cuts_opt)
+}
+
+
+
+
+
+#' Fit a GLM using detected optimal cut-points
+#'
+#' @param data a data frame
+#' @param optCuts a matrix containing a vector of optimal cut-points (as a list) corresponding to each covariate (may be null for some X), and a column of covariate names.
+#' @param y response variable. A matrix with two columns for a Cox family model, and a vector otherwise
+#' @param family any glmnet family option is available.
+#' @param col_cuts column name of optimal cut-points in optCuts
+#' @param col_x column name of covariate names in optCuts
+#'
+#' @returns data a data frame including created categorical covariates
+#' @export fit a GLM fit
+#'
+#' @examples
+biniFit <- function(data,
+                    optCuts,
+                    y,
+                    family,
+                    col_cuts = "opt_cuts",
+                    col_x = "opt_cuts_id") {
+  optCuts %<>%
+    rowwise %>%
+    mutate(na_flag = all(is.na(unlist(!!sym(col_cuts))))) %>%
+    ungroup %>%
+    filter(! na_flag) %>%
+    select(! na_flag)
+  cols <- optCuts[[col_x]]
+  data_converted <-
+    cumBinarizer(data = data,
+                 cols = cols,
+                 method = "fixed",
+                 cuts_list = optCuts[[col_cuts]])
+  if (family == "cox") {
+    dataFit <-
+      as.data.frame(data_converted$x) %>%
+      mutate(time = y[ , 1],
+             event = y[ , 2])
+    bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
+                                data = dataFit, x = TRUE)
+  }
+  else {
+    dataFit <-
+      as.data.frame(data_converted$x) %>%
+      plyr::mutate(y = y)
+    bini_fit <- stats::glm(formula = y ~ .,
+                           data = dataFit,
+                           family = family)
+  }
+
+  return(list(data = data_converted$data_cat,
+              fit = bini_fit))
 }
 
 
