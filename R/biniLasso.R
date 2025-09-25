@@ -266,29 +266,40 @@ biniFit <- function(data,
                     col_cuts = "opt_cuts",
                     col_x = "opt_cuts_id") {
   optCuts %<>%
-    rowwise %>%
-    mutate(na_flag = all(is.na(unlist(!!sym(col_cuts))))) %>%
-    ungroup %>%
-    filter(! na_flag) %>%
-    select(! na_flag)
-  cols <- optCuts[[col_x]]
-  data_converted <-
-    cumBinarizer(data = data,
-                 cols = cols,
-                 method = "fixed",
-                 cuts_list = optCuts[[col_cuts]])
+    dplyr::rowwise %>%
+    dplyr::mutate(na_flag = all(is.na(unlist(!!sym(col_cuts))))) %>%
+    dplyr::ungroup %>%
+    dplyr::filter(! na_flag) %>%
+    dplyr::select(! na_flag)
+  if (nrow(optCuts) > 0) {
+    cols <- optCuts[[col_x]]
+    data_converted <-
+      cumBinarizer(data = data,
+                   cols = cols,
+                   method = "fixed",
+                   cuts_list = optCuts[[col_cuts]])
+  }
   if (family == "cox") {
-    dataFit <-
-      as.data.frame(data_converted$x) %>%
-      mutate(time = y[ , 1],
-             event = y[ , 2])
+    if (nrow(optCuts) > 0) {
+      dataFit <-
+        as.data.frame(data_converted$x) %>%
+        dplyr::mutate(time = y[ , 1],
+                     event = y[ , 2])
+    } else {
+      dataFit <- data.frame(time = y[ , 1],
+                            event = y[ , 2])
+    }
     bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
                                 data = dataFit, x = TRUE)
   }
   else {
-    dataFit <-
-      as.data.frame(data_converted$x) %>%
-      plyr::mutate(y = y)
+    if (nrow(optCuts) > 0) {
+      dataFit <-
+        as.data.frame(data_converted$x) %>%
+        dplyr::mutate(y = y)
+    } else {
+      dataFit <- data.frame(y = y)
+    }
     bini_fit <- stats::glm(formula = y ~ .,
                            data = dataFit,
                            family = family)
