@@ -278,7 +278,7 @@ biniFit <- function(data,
                    cols = cols,
                    method = "fixed",
                    cuts_list = optCuts[[col_cuts]])
-  }
+  } else data_converted <- NULL
   if (family == "cox") {
     if (nrow(optCuts) > 0) {
       dataFit <-
