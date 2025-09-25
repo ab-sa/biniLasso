@@ -287,8 +287,7 @@ biniFit <- function(data,
                      event = y[ , 2])
     } else {
       dataFit <- data.frame(time = y[ , 1],
-                            event = y[ , 2],
-                            x = 1)
+                            event = y[ , 2])
     }
     bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
                                 data = dataFit, x = TRUE)
@@ -299,8 +298,7 @@ biniFit <- function(data,
         as.data.frame(data_converted$x) %>%
         mutate(y = y)
     } else {
-      dataFit <- data.frame(y = y,
-                            x = 1)
+      dataFit <- data.frame(y = y)
     }
     bini_fit <- stats::glm(formula = y ~ .,
                            data = dataFit,
