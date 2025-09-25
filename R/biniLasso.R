@@ -266,11 +266,11 @@ biniFit <- function(data,
                     col_cuts = "opt_cuts",
                     col_x = "opt_cuts_id") {
   optCuts %<>%
-    plyr::rowwise %>%
-    plyr::mutate(na_flag = all(is.na(as.numeric(unlist(!!sym(col_cuts)))))) %>%
-    plyr::ungroup %>%
-    plyr::filter(! na_flag) %>%
-    plyr::select(! na_flag)
+    rowwise %>%
+    mutate(na_flag = all(is.na(as.numeric(unlist(!!sym(col_cuts)))))) %>%
+    ungroup %>%
+    filter(! na_flag) %>%
+    select(! na_flag)
   if (nrow(optCuts) > 0) {
     cols <- optCuts[[col_x]]
     data_converted <-
@@ -283,7 +283,7 @@ biniFit <- function(data,
     if (nrow(optCuts) > 0) {
       dataFit <-
         as.data.frame(data_converted$x) %>%
-        plyr::mutate(time = y[ , 1],
+        mutate(time = y[ , 1],
                      event = y[ , 2])
     } else {
       dataFit <- data.frame(time = y[ , 1],
@@ -296,7 +296,7 @@ biniFit <- function(data,
     if (nrow(optCuts) > 0) {
       dataFit <-
         as.data.frame(data_converted$x) %>%
-        plyr::mutate(y = y)
+        mutate(y = y)
     } else {
       dataFit <- data.frame(y = y)
     }
