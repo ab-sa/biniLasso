@@ -267,7 +267,7 @@ biniFit <- function(data,
                     col_x = "opt_cuts_id") {
   optCuts %<>%
     dplyr::rowwise %>%
-    dplyr::mutate(na_flag = all(is.na(unlist(!!sym(col_cuts))))) %>%
+    dplyr::mutate(na_flag = all(is.na(as.numeric(unlist(!!sym(col_cuts)))))) %>%
     dplyr::ungroup %>%
     dplyr::filter(! na_flag) %>%
     dplyr::select(! na_flag)
