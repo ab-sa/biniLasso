@@ -4,7 +4,8 @@ Title: biniLasso: Automated cut-point detection via sparse cumulative binarizati
 Version: 0.1.0
 Authors@R: c(
     person("Abdollah", "Safari", email = "a.saffari72@gmail.com", role = c("aut", "cre")),
-    person("Hamed", "Helisaz", email = "hamedhelisaz@gmail.com", role = c("aut"))
+    person("Hamed", "Helisaz", email = "hamedhelisaz@gmail.com", role = c("ctb")),
+    person("Peter", "Loewen", email = "peter.loewen@ubc.ca", role = c("ctb"))
   )
 Description: biniLasso and its sparse variant, sparse biniLasso, is novel methods for prognostic analysis of high-dimensional data that enable detection of multiple cut-points per feature. This approach works based on two key features: (1) a cumulative binarization scheme with L1-penalized coefficients operating on context-dependent cut-point candidates, and (2) for sparse biniLasso, additional uniLasso regularization, a recently developed two-stage regularized regression, to enforce sparsity while preserving univariate coefficient patterns.
 Depends: R (>= 3.6.0)
