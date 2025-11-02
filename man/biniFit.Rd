@@ -20,8 +20,42 @@ biniFit(data, optCuts, y, family, col_cuts = "opt_cuts", col_x = "opt_cuts_id")
 \item{col_x}{column name of covariate names in optCuts}
 }
 \value{
-data a data frame including created categorical covariates
+data frame including created categorical covariates
 }
 \description{
 Fit a GLM using detected optimal cut-points
+}
+\examples{
+
+simData <- data.frame(t = rexp(1000),
+                      event = rbinom(1000, 1, 0.6),
+                      x1 = rnorm(1000),
+                      x2 = rnorm(1000),
+                      x3 = rnorm(1000))
+
+simData_converted <-
+  cumBinarizer(data = simData,
+               cols = c("x1", "x2", "x3"),
+               method = "quantile",
+               n_bins = 30)
+
+simData_sim_optCuts <-
+ opt_cuts_finder(x = simData_converted$x,
+                 y = survival::Surv(simData$t, simData$event),
+                 method = "biniLasso",
+                 family = "cox",
+                 lasso_rule = "1se",
+                 lasso_nfolds = 10,
+                 penalty.factor = NULL,
+                 cols = c("x1", "x2", "x3"),
+                 x_cuts = simData_converted$x_cuts)
+
+biniFit(data = simData_converted,
+        optCuts = .,
+        y = Surv(simData_converted$tte, simData_converted$vital_status),
+        family = "cox",
+        col_cuts = "opt_cuts",
+        col_x = "opt_cuts_id")
+
+
 }
