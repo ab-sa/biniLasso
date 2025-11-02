@@ -455,7 +455,7 @@ opt_fixed_nCuts <-
                                        y = y,
                                        nCuts_per_group = max_nCuts,
                                        lambda_grid = lambda_grid,
-                                       uniLasso_flag = FALSE))
+                                       miniLasso = FALSE))
       }
       x_selected <- x[ , cols_selected]
       if (penalFac_null_flag) penalty.factor <- rep(1, ncol(x_selected))
@@ -482,7 +482,7 @@ opt_fixed_nCuts <-
                                        y = y,
                                        nCuts_per_group = max_nCuts,
                                        lambda_grid = lambda_grid,
-                                       uniLasso_flag = TRUE))
+                                       miniLasso = TRUE))
       }
       x_selected <- x[ , cols_selected]
       if (penalFac_null_flag) penalty.factor <- rep(1, ncol(x_selected))
