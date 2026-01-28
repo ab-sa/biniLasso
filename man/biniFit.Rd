@@ -4,7 +4,15 @@
 \alias{biniFit}
 \title{Fit a GLM using detected optimal cut-points}
 \usage{
-biniFit(data, optCuts, y, family, col_cuts = "opt_cuts", col_x = "opt_cuts_id")
+biniFit(
+  data,
+  optCuts,
+  y,
+  family,
+  col_cuts = "opt_cuts",
+  col_x = "opt_cuts_id",
+  covariate_type = "dummy"
+)
 }
 \arguments{
 \item{data}{a data frame}
@@ -18,6 +26,9 @@ biniFit(data, optCuts, y, family, col_cuts = "opt_cuts", col_x = "opt_cuts_id")
 \item{col_cuts}{column name of optimal cut-points in optCuts}
 
 \item{col_x}{column name of covariate names in optCuts}
+
+\item{covariate_type}{a string indicating whether the fitted Cox model/GLM should include categorical covariates derived from the optimal cut-points ("factor"),
+or should use the indicator variables resulted from the optimal cut-points ("dummy").}
 }
 \value{
 data frame including created categorical covariates

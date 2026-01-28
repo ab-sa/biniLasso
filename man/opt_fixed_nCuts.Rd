@@ -5,8 +5,8 @@
 \title{Find optimal cut-points where number of cut-points per predictor is fixed}
 \usage{
 opt_fixed_nCuts(
-  x = gbm_converted_obj$x,
-  y = survival::Surv(gbm_data_fnl$tte, gbm_data_fnl$vital_status),
+  x,
+  y,
   max_nCuts = 2,
   method = "biniLasso",
   family = "cox",

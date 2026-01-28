@@ -4,10 +4,13 @@
 \alias{c_binarization}
 \title{Create cumulative binarized features}
 \usage{
-c_binarization(x, breaks, labels)
+c_binarization(x, output = "binarized_matrix", breaks, labels)
 }
 \arguments{
 \item{x}{input numeric covariate for cumulative binarization}
+
+\item{output}{output type, either binarized_matrix for a matrix containing dummy variables corresponding to each continuous covariate,
+or categorical_df for a data frame containing vategorical version of continuous covariate}
 
 \item{breaks}{breaking values to be used for binarization}
 

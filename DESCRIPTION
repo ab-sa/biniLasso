@@ -1,7 +1,7 @@
 Package: biniLasso
 Type: Package
 Title: biniLasso: Automated cut-point detection via sparse cumulative binarization
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Abdollah", "Safari", email = "a.saffari72@gmail.com", role = c("aut", "cre")),
     person("Hamed", "Helisaz", email = "hamedhelisaz@gmail.com", role = c("ctb")),
@@ -21,7 +21,7 @@ Imports:
     dplyr
 Remotes:
     trevorhastie/uniLasso
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

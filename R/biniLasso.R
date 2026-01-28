@@ -1,7 +1,8 @@
-
 #' Create cumulative binarized features
 #'
 #' @param x input numeric covariate for cumulative binarization
+#' @param output output type, either binarized_matrix for a matrix containing dummy variables corresponding to each continuous covariate,
+#' or categorical_df for a data frame containing vategorical version of continuous covariate
 #' @param breaks breaking values to be used for binarization
 #' @param labels labels to be used for the created cumulative binarized columns
 #'
@@ -9,18 +10,27 @@
 #'
 c_binarization <-
   function (x,
+            output = "binarized_matrix",
             breaks,
             labels) {
-    x_length <- length(x)
-    n_breaks <- length(breaks)
-    matrix_binarization <- base::matrix(0, nrow = x_length,
-                                        ncol = n_breaks,
-                                        dimnames = list(character(),
-                                                        labels))
-    for (i in 1:n_breaks) {
-      matrix_binarization[, i][which(x >= breaks[i])] <- 1
+    if (output == "binarized_matrix") {
+      x_length <- length(x)
+      n_breaks <- length(breaks)
+      matrix_binarization <- base::matrix(0, nrow = x_length,
+                                          ncol = n_breaks,
+                                          dimnames = list(character(),
+                                                          labels))
+      for (i in 1 : n_breaks) {
+        matrix_binarization[, i][which(x >= breaks[i])] <- 1
+      }
+      return(matrix_binarization)
     }
-    return(matrix_binarization)
+    if (output == "categorical_df") {
+      x_fact <-
+        cut(x,
+            breaks = c(-Inf, breaks, Inf))
+      return(x_fact)
+    }
   }
 
 
@@ -31,6 +41,7 @@ c_binarization <-
 #' @param method either "quantile" (default) for using quantiles of a given column as its cut-points, or "fixed" to used a user provided vector of cut-points. See cuts_list input.
 #' @param n_bins an integer value specifying number of bins to convert the numeric columns. Only needed for quantile method.
 #' @param cuts_list a list of cut-points corresponding to each numeric column in the same order as entries of cols input.
+#' @param categorical_df logical, indicates whether the function should returns a dataframe containing categorical version of categorized continuous covariates.
 #'
 #' @returns data_cat a data frame including original numeric columns as well as the converted categorical columns.
 #' @returns x a matrix including dummy variables corresponding to converted categorical variables.
@@ -63,10 +74,16 @@ cumBinarizer <-
            cols,
            method = "quantile",
            n_bins = NULL,
-           cuts_list = NULL) {
+           cuts_list = NULL,
+           categorical_df = FALSE) {
 
     len_flag <- FALSE
     x <- matrix(1, ncol = 1, nrow = nrow(data))
+    if (categorical_df) {
+      data_cat <-
+        data %>%
+        select(all_of(cols))
+    }
 
     data_bins <- data[ , cols]
     for (nf in 1 : length(cols)) {
@@ -91,6 +108,13 @@ cumBinarizer <-
                  c_binarization(x = data[ , cols[nf]],
                                 breaks = x_cuts_tmp,
                                 labels = paste0(cols[nf], cut_names_tmp)))
+      if (categorical_df) {
+        data_cat[ , cols[nf]] <-
+          c_binarization(x = data[ , cols[nf]],
+                         breaks = x_cuts_tmp,
+                         labels = paste0(cols[nf], cut_names_tmp),
+                         output = "categorical_df")
+      }
 
       if (nf == 1) x_cuts <- list(x_cuts_tmp)
       if (nf == 2) x_cuts <- list(c(x_cuts, list(x_cuts_tmp)))
@@ -99,8 +123,23 @@ cumBinarizer <-
 
     if (len_flag) warning("Not enough unique values in listed numeric columns to convert all of them to exactly n_bins dummy variables. The dummy variables were adjusted according to the available unique values in each numeric column.")
 
-    return(list(x = x[ , -1],
-                x_cuts = x_cuts))
+    if (ncol(x) == 2) {
+      xmat <- as.matrix(x[ , -1], ncol = 1)
+      colnames(xmat) <- colnames(x)[2]
+    }
+    else {
+      xmat <- x[ , -1]
+    }
+
+    if (categorical_df) {
+      return(list(x = xmat,
+                  x_cuts = x_cuts,
+                  data_cat = data_cat))
+    }
+    else {
+      return(list(x = xmat,
+                  x_cuts = x_cuts))
+    }
   }
 
 
@@ -108,7 +147,8 @@ cumBinarizer <-
 #'
 #' @param glm_fit the fitted glmnet object
 #' @param cols a vector of numeric column names (characters)
-#' @param x_cuts a list of cut-points corresponding to each entry of cols and in the same order.
+#' @param x_cuts a list of cut-points corresponding to each entry of cols and in the same order. block_len
+#' @param block_len an integer represents block lenght of consecutive candidate cut-points form which, at most one optimal cut-point can be extracted.
 #' @param lambda_opt the value to be used as Lasso optimal lambda value for coefficients extracted. This can be left unspecified (NULL) if lambda value already has been specified in the glm_fit (regular LAsso fit), or alternatively, the glm_fit can contain model fit for a range of lambda values (mainly for uniLasso fit), but for coefficient extraction, the fit corresponding to this lambda value will be used.
 #'
 #' @returns a list of optimal cut-points corresponding to the columns in cols and in the same order.
@@ -117,28 +157,110 @@ cuts_extractor <-
   function(glm_fit,
            cols,
            x_cuts,
+           block_len = 3,
            lambda_opt = NULL) {
 
-    if (is.null(lambda_opt)) beta_nonZero <- names(glm_fit$beta[ , 1][glm_fit$beta[, 1] != 0])
-    else {
-      lambda_inx <- which(glm_fit$lambda == lambda_opt)
-      beta_nonZero <- names(glm_fit$beta[ , lambda_inx][glm_fit$beta[, lambda_inx] != 0])
-    }
+    if (is.null(lambda_opt)) lambda_inx <- 1
+    else lambda_inx <- which(glm_fit$lambda == lambda_opt)
+    beta_nonZero <- names(glm_fit$beta[ , lambda_inx][glm_fit$beta[, lambda_inx] != 0])
+
     for (nf in 1 : length(cols)) {
-      X_cuts_ind_tmp <- as.numeric(unlist(lapply(beta_nonZero[grepl(cols[nf], beta_nonZero)],
-                                                 function(x) {
-                                                   locs <- stringr::str_locate_all(x, "_bin")[[1]]
-                                                   locs <- locs[nrow(locs) , "end"]
-                                                   substr(x, start = locs + 1, stop = nchar(x))
-                                                 })))
-      X_cuts_ind_tmp <- X_cuts_ind_tmp[c(1, which(diff(X_cuts_ind_tmp) > 1) + 1)]
+
+      X_cuts_names_tmp <- beta_nonZero[grepl(cols[nf], beta_nonZero)]
+      X_cuts_ind_tmp <-
+        unlist(lapply(X_cuts_names_tmp,
+                      function(x) {
+                        x <- stringr::str_replace_all(x, pattern = "`", replacement = "")
+                        str_list <- unlist(strsplit(x, "_bin"))
+                        return(as.numeric(str_list[length(str_list)]))
+                      }))
+
+      # find max effect of each consecutive sequence of bins
+      if (length(X_cuts_names_tmp) <= 1) {
+        bin_inds <- X_cuts_ind_tmp
+      }
+      else {
+        cbind(name = names(glm_fit$beta[X_cuts_names_tmp , lambda_inx]),
+              coef = glm_fit$beta[X_cuts_names_tmp , lambda_inx]) %>%
+          as.data.frame %>%
+          mutate(coef = as.numeric(coef),
+                 group = c(0, cumsum(diff(X_cuts_ind_tmp) > 1))) %>%
+          group_by(group) %>%
+          mutate(len = length(group)) %>%
+          ungroup -> df_tmp
+        # detect blocks with lenght>block_len => break them to block with lenght <= block_len
+        if (any(df_tmp$len > block_len)) {
+          df_tmp %<>%
+            filter(len > block_len) %>%
+            group_by(group) %>%
+            mutate(len_d = len %/% 3,
+                   group_w = c(rep(c(1 : max(len_d)), each = block_len),
+                               rep(0, max(len) - max(len_d) * block_len))) %>%
+            rowwise %>%
+            mutate(group = paste0(group, group_w)) %>%
+            group_by(group) %>%
+            mutate(len = length(group)) %>%
+            ungroup %>%
+            select(name, coef, group, len) %>%
+            bind_rows(df_tmp %>%
+                        filter(len <= 3) %>%
+                        mutate(group = paste0(group, 0))) %>%
+            arrange(group)
+        }
+        df_tmp %<>%
+          arrange(name) %>%
+          group_by(group) %>%
+          mutate(coef_max = abs(coef) / coef * max(abs(coef))) %>%
+          ungroup
+        df_tmp %>%
+          filter(coef == coef_max) %>%
+          mutate(bin_ind =
+                   unlist(lapply(name,
+                                 function(x) {
+                                   x <- stringr::str_replace_all(x, pattern = "`", replacement = "")
+                                   str_list <- unlist(strsplit(x, "_bin"))
+                                   return(as.numeric(str_list[length(str_list)]))
+                                 })),
+                 bin_ind_diff = c(0, diff(bin_ind))) -> df_tmp_fltr
+        # Again, find max effect of each consecutive sequence of bins after above process
+        if (any(df_tmp_fltr$bin_ind_diff == 1)) {
+          inds_diff1 <- which(df_tmp_fltr$bin_ind_diff == 1)
+          rbind(cbind(df_tmp_fltr[inds_diff1, ],
+                      grp_tmp = c(1 : length(inds_diff1))),
+                cbind(df_tmp_fltr[inds_diff1 - 1, ],
+                      grp_tmp = c(1 : length(inds_diff1)))) %>%
+            group_by(grp_tmp) %>%
+            mutate(coef_min = min(abs(coef))) %>%
+            ungroup %>%
+            filter(coef_min == abs(coef)) %$%
+            unique(name) -> excl_names
+          df_tmp %>%
+            filter(! name %in% excl_names) %>%
+            arrange(name) %>%
+            group_by(group) %>%
+            mutate(coef_max = abs(coef) / coef * max(abs(coef))) %>%
+            ungroup %>%
+            filter(coef == coef_max) %>%
+            mutate(bin_ind =
+                     unlist(lapply(name,
+                                   function(x) {
+                                     x <- stringr::str_replace_all(x, pattern = "`", replacement = "")
+                                     str_list <- unlist(strsplit(x, "_bin"))
+                                     return(as.numeric(str_list[length(str_list)]))
+                                   }))) -> df_tmp_fltr
+        }
+        bin_inds <- df_tmp_fltr$bin_ind
+      }
+
       x_bounds_tmp <- x_cuts[[1]][nf][[1]]
-      if (nf == 1) x_cuts_opt <- list(unique(x_bounds_tmp[X_cuts_ind_tmp]))
-      if (nf == 2) x_cuts_opt <- list(c(x_cuts_opt, list(unique(x_bounds_tmp[X_cuts_ind_tmp]))))
-      if (nf > 2) x_cuts_opt <- list(c(x_cuts_opt[[1]], list(unique(x_bounds_tmp[X_cuts_ind_tmp]))))
+
+      if (nf == 1) x_cuts_opt <- list(unique(x_bounds_tmp[bin_inds]))
+      if (nf == 2) x_cuts_opt <- list(c(x_cuts_opt, list(unique(x_bounds_tmp[bin_inds]))))
+      if (nf > 2) x_cuts_opt <- list(c(x_cuts_opt[[1]], list(unique(x_bounds_tmp[bin_inds]))))
     }
-  return(x_cuts_opt)
-}
+
+    return(x_cuts_opt)
+  }
 
 
 #' Optimal cut-points finder based on biniLasso method
@@ -197,29 +319,29 @@ opt_cuts_finder <-
 
     if ("biniLasso" %in% method) {
       bini_cv <- glmnet::cv.glmnet(x = x, y = y,
-                          family = family, nfolds = lasso_nfolds,
-                          penalty.factor = penalty.factor)
+                                   family = family, nfolds = lasso_nfolds,
+                                   penalty.factor = penalty.factor)
       bini_fit <- glmnet::glmnet(x = x, y = y,
-                        family = family,
-                        lambda = ifelse(lasso_rule == "min",
-                                        bini_cv$lambda.min,
-                                        bini_cv$lambda.1se),
-                        penalty.factor = penalty.factor)
+                                 family = family,
+                                 lambda = ifelse(lasso_rule == "min",
+                                                 bini_cv$lambda.min,
+                                                 bini_cv$lambda.1se),
+                                 penalty.factor = penalty.factor)
       x_cuts_bini_opt <- cuts_extractor(glm_fit = bini_fit,
                                         cols = cols,
                                         x_cuts = x_cuts)
       x_cuts_bini_opt <- x_cuts_bini_opt[[1]]
       names(x_cuts_bini_opt) <- cols
       x_cuts_bini_opt <- dplyr::tibble(method = "biniLasso",
-                                opt_cuts = list(x_cuts_bini_opt))
+                                       opt_cuts = list(x_cuts_bini_opt))
     }
     if ("miniLasso" %in% method) {
       ubini_cv <- uniLasso::cv.uniLasso(x = x, y = y,
-                            family = family, nfolds = lasso_nfolds,
-                            penalty.factor = penalty.factor)
+                                        family = family, nfolds = lasso_nfolds,
+                                        penalty.factor = penalty.factor)
       ubini_fit <- uniLasso::uniLasso(x = x, y = y,
-                          family = family,
-                          penalty.factor = penalty.factor)
+                                      family = family,
+                                      penalty.factor = penalty.factor)
       x_cuts_ubini_opt <- cuts_extractor(glm_fit = ubini_fit,
                                          cols = cols,
                                          x_cuts = x_cuts,
@@ -229,16 +351,16 @@ opt_cuts_finder <-
       x_cuts_ubini_opt <- x_cuts_ubini_opt[[1]]
       names(x_cuts_ubini_opt) <- cols
       x_cuts_ubini_opt <- dplyr::tibble(method = "miniLasso",
-                                 opt_cuts = list(x_cuts_ubini_opt))
+                                        opt_cuts = list(x_cuts_ubini_opt))
     }
 
     if (all(method == "biniLasso")) return(x_cuts_bini_opt)
     if (all(method == "miniLasso")) return(x_cuts_ubini_opt)
     if (all(method == c("biniLasso", "miniLasso"))) return(x_cuts_bini_opt %>%
-                                                                    dplyr::bind_rows(x_cuts_ubini_opt))
+                                                             dplyr::bind_rows(x_cuts_ubini_opt))
 
-  return(x_cuts_opt)
-}
+    return(x_cuts_opt)
+  }
 
 
 #' Fit a GLM using detected optimal cut-points
@@ -249,6 +371,8 @@ opt_cuts_finder <-
 #' @param family any glmnet family option is available.
 #' @param col_cuts column name of optimal cut-points in optCuts
 #' @param col_x column name of covariate names in optCuts
+#' @param covariate_type a string indicating whether the fitted Cox model/GLM should include categorical covariates derived from the optimal cut-points ("factor"),
+#' or should use the indicator variables resulted from the optimal cut-points ("dummy").
 #'
 #' @returns data frame including created categorical covariates
 #' @export
@@ -291,50 +415,107 @@ biniFit <- function(data,
                     y,
                     family,
                     col_cuts = "opt_cuts",
-                    col_x = "opt_cuts_id") {
+                    col_x = "opt_cuts_id",
+                    covariate_type = "dummy") {
   optCuts %<>%
     rowwise %>%
     mutate(na_flag = all(is.na(as.numeric(unlist(!!sym(col_cuts)))))) %>%
     ungroup %>%
     filter(! na_flag) %>%
     select(! na_flag)
+  coef_na_flag <- FALSE
   if (nrow(optCuts) > 0) {
     cols <- optCuts[[col_x]]
     data_converted <-
       cumBinarizer(data = data,
                    cols = cols,
                    method = "fixed",
-                   cuts_list = optCuts[[col_cuts]])
+                   cuts_list = optCuts[[col_cuts]],
+                   categorical_df = TRUE)
   } else data_converted <- NULL
   if (family == "cox") {
     if (nrow(optCuts) > 0) {
-      dataFit <-
-        as.data.frame(data_converted$x) %>%
-        mutate(time = y[ , 1],
-                     event = y[ , 2])
+      if (covariate_type == "dummy") {
+        dataFit <-
+          as.data.frame(data_converted$x) %>%
+          mutate(time = y[ , 1],
+                 event = y[ , 2])
+
+        bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
+                                    data = dataFit, x = TRUE)
+        if (any(is.na(bini_fit$coefficients))) {
+          dataFit_updated <-
+            as.data.frame(data_converted$x) %>%
+            select(! names(bini_fit$coefficients)[is.na(bini_fit$coefficients)]) %>%
+            mutate(time = y[ , 1],
+                   event = y[ , 2])
+          bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
+                                      data = dataFit_updated, x = TRUE)
+          coef_na_flag <- TRUE
+        }
+      }
+      if (covariate_type == "factor") {
+        dataFit <-
+          as.data.frame(data_converted$data_cat) %>%
+          mutate(time = y[ , 1],
+                 event = y[ , 2])
+        bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
+                                    data = dataFit, x = TRUE)
+      }
     } else {
       dataFit <- data.frame(time = y[ , 1],
                             event = y[ , 2])
+      bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ 1,
+                                  data = dataFit, x = TRUE)
     }
-    bini_fit <- survival::coxph(formula = survival::Surv(time, event) ~ .,
-                                data = dataFit, x = TRUE)
   }
   else {
     if (nrow(optCuts) > 0) {
-      dataFit <-
-        as.data.frame(data_converted$x) %>%
-        mutate(y = y)
+      if (covariate_type == "dummy") {
+        dataFit <-
+          as.data.frame(data_converted$x) %>%
+          mutate(y = y)
+        bini_fit <- stats::glm(formula = y ~ .,
+                               data = dataFit,
+                               family = family)
+        if (any(is.na(bini_fit$coefficients))) {
+          dataFit_updated <-
+            as.data.frame(data_converted$x) %>%
+            select(! names(bini_fit$coefficients)[is.na(bini_fit$coefficients)]) %>%
+            mutate(y = y)
+          bini_fit <- stats::glm(formula = y ~ .,
+                                 data = dataFit_updated,
+                                 family = family)
+          coef_na_flag <- TRUE
+        }
+      }
+      if (covariate_type == "factor") {
+        dataFit <-
+          as.data.frame(data_converted$data_cat) %>%
+          mutate(y = y)
+        bini_fit <- stats::glm(formula = y ~ .,
+                               data = dataFit,
+                               family = family)
+      }
     } else {
       dataFit <- data.frame(y = y)
+      bini_fit <- stats::glm(formula = y ~ 1,
+                             data = dataFit,
+                             family = family)
     }
-    bini_fit <- stats::glm(formula = y ~ .,
-                           data = dataFit,
-                           family = family)
   }
 
-  return(list(data = data_converted$data_cat,
-              fit = bini_fit,
-              dataFit = dataFit))
+  if (coef_na_flag) {
+    return(list(data = data_converted$data_cat,
+                fit = bini_fit,
+                dataFit = dataFit,
+                dataFit_updated = dataFit_updated))
+  }
+  else {
+    return(list(data = data_converted$data_cat,
+                fit = bini_fit,
+                dataFit = dataFit))
+  }
 }
 
 
@@ -432,9 +613,8 @@ cuts_finder <- function(x = X_mat_tmp,
 #'
 #'
 opt_fixed_nCuts <-
-  function (x = gbm_converted_obj$x,
-            y = survival::Surv(gbm_data_fnl$tte,
-                               gbm_data_fnl$vital_status),
+  function (x,
+            y,
             max_nCuts = 2,
             method = "biniLasso", family = "cox", lasso_rule = "1se",
             lasso_nfolds = 10, penalty.factor = NULL,

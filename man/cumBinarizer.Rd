@@ -4,7 +4,14 @@
 \alias{cumBinarizer}
 \title{Convert Numeric to Factor}
 \usage{
-cumBinarizer(data, cols, method = "quantile", n_bins = NULL, cuts_list = NULL)
+cumBinarizer(
+  data,
+  cols,
+  method = "quantile",
+  n_bins = NULL,
+  cuts_list = NULL,
+  categorical_df = FALSE
+)
 }
 \arguments{
 \item{data}{a data frame}
@@ -16,6 +23,8 @@ cumBinarizer(data, cols, method = "quantile", n_bins = NULL, cuts_list = NULL)
 \item{n_bins}{an integer value specifying number of bins to convert the numeric columns. Only needed for quantile method.}
 
 \item{cuts_list}{a list of cut-points corresponding to each numeric column in the same order as entries of cols input.}
+
+\item{categorical_df}{logical, indicates whether the function should returns a dataframe containing categorical version of categorized continuous covariates.}
 }
 \value{
 data_cat a data frame including original numeric columns as well as the converted categorical columns.

@@ -4,14 +4,16 @@
 \alias{cuts_extractor}
 \title{Extract optimal cut-points from the fitted glmnet model.}
 \usage{
-cuts_extractor(glm_fit, cols, x_cuts, lambda_opt = NULL)
+cuts_extractor(glm_fit, cols, x_cuts, block_len = 3, lambda_opt = NULL)
 }
 \arguments{
 \item{glm_fit}{the fitted glmnet object}
 
 \item{cols}{a vector of numeric column names (characters)}
 
-\item{x_cuts}{a list of cut-points corresponding to each entry of cols and in the same order.}
+\item{x_cuts}{a list of cut-points corresponding to each entry of cols and in the same order. block_len}
+
+\item{block_len}{an integer represents block lenght of consecutive candidate cut-points form which, at most one optimal cut-point can be extracted.}
 
 \item{lambda_opt}{the value to be used as Lasso optimal lambda value for coefficients extracted. This can be left unspecified (NULL) if lambda value already has been specified in the glm_fit (regular LAsso fit), or alternatively, the glm_fit can contain model fit for a range of lambda values (mainly for uniLasso fit), but for coefficient extraction, the fit corresponding to this lambda value will be used.}
 }
